@@ -12,11 +12,26 @@ export type ReturnObject = {
 
 export async function getJpyPrice(
   symbol: string,
-  date: DDMMYYYY
+  date: DDMMYYYY,
+  option: { debug: boolean } = { debug: false }
 ): Promise<ReturnObject> {
+  if (option.debug) {
+    console.debug(
+      `type=debug, symbol=${symbol}, date=${date}, option=${JSON.stringify(
+        option,
+        null,
+        2
+      )}`
+    );
+  }
+
   const coinInfo = list.find((x) => x.symbol === symbol.toLowerCase());
   if (coinInfo === undefined) {
     throw new Error(`tickerSymbol ${symbol} is not found.`);
+  }
+
+  if (option.debug) {
+    console.debug(`type=debug, coinInfo=${JSON.stringify(coinInfo, null, 2)}`);
   }
 
   const client = new CoinGecko();

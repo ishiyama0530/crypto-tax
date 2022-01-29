@@ -1,68 +1,42 @@
-import { jpyg } from "../../jpyg/dist";
-import { DDMMYYYY } from "../../jpyg/dist/api/get_jpy_price/DDMMYYYY";
 import * as csv from "csv";
+import dayjs from "dayjs";
 import fs from "fs";
+import { binanceConvertor } from "../convertors/binance_convertor";
+import { Convertor } from "../convertors/convertor";
+
+const convertor: Convertor = binanceConvertor;
 
 export default function main() {
   const parser = csv.parse({ trim: true }, async (e, data: string[][]) => {
-    const [header, ...rows] = data;
-    header.splice(6, 0, "Change_JPY");
+    const { newRows, errorRows } = await convertor.handle(data);
 
-    const newRows: string[][] = [header];
-
-    const works = rows.map(
-      (row) =>
-        new Promise<void>(async (resolve, reject) => {
-          try {
-            const newRow = [...row];
-
-            // 2021-01-03 17:03:10 -> [2021, 1, 3]
-            const date = row[1]
-              .split(" ")[0]
-              .split("-")
-              .map((x) => Number(x));
-
-            const symbol = row[4];
-            const unitPriceJpy = await jpyg(
-              symbol,
-              new DDMMYYYY(date[0], date[1], date[2]),
-              { debug: false }
-            );
-
-            const change = Number(row[5]);
-            const changeJpy = unitPriceJpy.jpy * change;
-
-            newRow.splice(6, 0, changeJpy.toString());
-            newRows.push(newRow);
-
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        })
+    const ws = fs.createWriteStream(
+      `.workspace/out_${dayjs().format("YYYY-MM-DD-HH:mm:ssZ[Z]")}.csv`
     );
 
-    await Promise.all(works);
-    const writeStream = fs.createWriteStream("out.csv");
+    csv
+      .stringify(newRows)
+      .on("data", (chunk) => ws.write(chunk))
+      .on("error", (err) => destroy(ws));
+    ws.on("error", (err) => destroy(ws));
 
-    const destroy = () => {
-      console.log("destroy called");
-      writeStream.close();
-      stringifier.end();
-    };
-
-    const stringifier = csv.stringify(newRows);
-
-    stringifier
-      .on("data", (chunk) => {
-        writeStream.write(chunk);
-      })
-      .on("error", (err) => destroy());
-
-    writeStream.on("error", (err) => destroy());
+    const errorWs = fs.createWriteStream(
+      `.workspace/error_${dayjs().format("YYYY-MM-DDTHH:mm:ssZ[Z]")}.csv`
+    );
+    csv
+      .stringify(errorRows)
+      .on("data", (chunk) => errorWs.write(chunk))
+      .on("error", (err) => destroy(errorWs));
+    ws.on("error", (err) => destroy(errorWs));
   });
 
-  fs.createReadStream("data.csv").pipe(parser);
+  fs.createReadStream(".workspace/data.csv").pipe(parser);
 }
+
+const destroy = (ws: fs.WriteStream) => {
+  console.log("destroy called");
+  ws.close();
+  ws.end();
+};
 
 main();

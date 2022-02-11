@@ -13,7 +13,10 @@ export type ReturnObject = {
 export async function getJpyPrice(
   symbol: string,
   date: DDMMYYYY,
-  option: { debug: boolean } = { debug: false }
+  option: { currency: string; debug: boolean } = {
+    currency: "jpy",
+    debug: false,
+  }
 ): Promise<ReturnObject> {
   if (option.debug) {
     console.debug(
@@ -44,10 +47,14 @@ export async function getJpyPrice(
     throw new Error(`code=${resp.code}, message=${resp.message}`);
   }
 
+  if (option.debug) {
+    console.debug(`type=debug, resp=${JSON.stringify(resp, null, 2)}`);
+  }
+
   return {
     name: coinInfo.name,
     symbol: coinInfo.symbol,
     date: date.toDate(),
-    jpy: resp.data.market_data.current_price.jpy,
+    jpy: (resp.data.market_data.current_price as any)[option.currency],
   };
 }

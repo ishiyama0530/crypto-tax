@@ -1,12 +1,13 @@
-import { delay } from "./libs/delay/index";
 import { jpyg } from "../../jpyg/dist";
 import { DDMMYYYY } from "../../jpyg/dist/api/get_jpy_price/DDMMYYYY";
 import { Convertor } from "./convertor";
+import { delay } from "./libs/delay/index";
 
-export const binanceConvertor: Convertor = {
+export const ftxFundingPaymentConvertor: Convertor = {
   handle: async (data: string[][]) => {
     const [header, ...rows] = data;
-    header.splice(6, 0, "Change_JPY");
+    header.push(""); // C5
+    header.push("payment(jpy)"); // C6
 
     const newRows: string[][] = [header];
     const errorRows: string[][] = [header];
@@ -18,23 +19,23 @@ export const binanceConvertor: Convertor = {
           try {
             const newRow = [...row];
 
-            // 2021-01-03 17:03:10 -> [2021, 1, 3]
-            const date = row[1]
-              .split(" ")[0]
+            // 2021-12-27T01:35:24.999892+00:00 -> [2021, 1, 3]
+            const date = row[0]
+              .split("T")[0]
               .split("-")
               .map((x) => Number(x));
 
-            const symbol = row[4];
-            const unitPriceJpy = await jpyg(
-              symbol,
+            const unitPrice = await jpyg(
+              "usdt",
               new DDMMYYYY(date[0], date[1], date[2]),
               { currency: "jpy", debug: false }
             );
 
-            const change = Number(row[5]);
-            const changeJpy = unitPriceJpy.jpy * change;
+            const usdPayment = Number(row[2]);
+            const jpyPayment = usdPayment * unitPrice.jpy;
 
-            newRow.splice(6, 0, changeJpy.toString());
+            header.push(""); // C5
+            newRow.push(jpyPayment.toString()); // C6
             newRows.push(newRow);
 
             console.info(JSON.stringify(newRow, null, 2));
@@ -44,6 +45,7 @@ export const binanceConvertor: Convertor = {
             errorRows.push(row);
 
             console.error(`[ERROR] ${JSON.stringify(row, null, 2)}`);
+            console.error(error);
 
             resolve();
           }

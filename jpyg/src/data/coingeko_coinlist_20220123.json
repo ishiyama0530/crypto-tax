@@ -7545,11 +7545,6 @@
         "name": "Binance-Peg Cardano"
     },
     {
-        "id": "binance-peg-dogecoin",
-        "symbol": "doge",
-        "name": "Binance-Peg Dogecoin"
-    },
-    {
         "id": "binance-peg-eos",
         "symbol": "eos",
         "name": "Binance-Peg EOS"
@@ -7583,11 +7578,6 @@
         "id": "binance-peg-polkadot",
         "symbol": "dot",
         "name": "Binance-Peg Polkadot"
-    },
-    {
-        "id": "binance-peg-xrp",
-        "symbol": "xrp",
-        "name": "Binance-Peg XRP"
     },
     {
         "id": "binance-smart-chain-girl",
@@ -10908,11 +10898,6 @@
         "id": "cajutel",
         "symbol": "caj",
         "name": "Cajutel"
-    },
-    {
-        "id": "cake",
-        "symbol": "cake",
-        "name": "CakeDAO"
     },
     {
         "id": "cakebaker",
